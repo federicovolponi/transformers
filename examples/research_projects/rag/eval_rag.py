@@ -12,6 +12,7 @@ from tqdm import tqdm
 
 from transformers import BartForConditionalGeneration, RagRetriever, RagSequenceForGeneration, RagTokenForGeneration
 from transformers import logging as transformers_logging
+from datasets import load_from_disk
 
 
 sys.path.append(os.path.join(os.getcwd()))  # noqa: E402 # isort:skip
@@ -154,9 +155,21 @@ def get_args():
     parser.add_argument(
         "--index_name",
         default=None,
-        choices=["exact", "compressed", "legacy"],
+        choices=["exact", "compressed", "legacy", "custom"],
         type=str,
         help="RAG model retriever type",
+    )
+    parser.add_argument(
+        "--custom_dataset_path",
+        default=None,
+        type=str,
+        help="Path to a custom dataset"
+    )
+    parser.add_argument(
+        "--custom_index_path",
+        default=None,
+        type=str,
+        help="Path to a custom dataset"
     )
     parser.add_argument(
         "--index_path",
@@ -266,6 +279,12 @@ def main(args):
             model_kwargs["index_name"] = args.index_name
         if args.index_path is not None:
             model_kwargs["index_path"] = args.index_path
+        if args.custom_dataset_path is not None:
+            dataset = load_from_disk(args.custom_dataset_path)
+        if args.custom_index_path is not None:
+            dataset.load_faiss_index("embeddings", args.custom_index_path)
+            model_kwargs["indexed_dataset"] = dataset
+
     else:
         model_class = BartForConditionalGeneration
 
